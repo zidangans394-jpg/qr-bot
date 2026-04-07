@@ -117,7 +117,7 @@ client.on(Events.MessageCreate, async (message) => {
                 .setColor(0x2B2D31)
                 .setTitle(`${qris} QRIS ALLPAY ${centang}\n${dana} DANA ${centang}`)
                 .setImage('attachment://qris.jpg')
-                .setFooter({ text: 'Pilih metode pembayaran' });
+                .setFooter({ text: 'MarvinX Team System' });
             await message.channel.send({ embeds: [embed], files: [imagePath] });
         } catch (error) { console.error(error); }
     }
