@@ -9,7 +9,7 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildVoiceStates // Wajib untuk voice
+        GatewayIntentBits.GuildVoiceStates
     ]
 });
 
@@ -20,12 +20,13 @@ const VOICE_CHANNEL_ID = '1470746311979434082';
 const EMOJI_PETIR = '<a:thunder:1485326834269688019>';
 const EMOJI_QRIS = '<:qris:1485329765559832596>';
 const EMOJI_DANA = '<:dana:1485329627986657472>';
+const EMOJI_CENTANG = '<:centang:1485331070072389744>';
 
 let currentConnection = null;
 
 // Fungsi untuk join voice channel & auto-reconnect
 async function joinVoiceChannelAndReconnect() {
-    const guild = client.guilds.cache.first(); // Asumsi bot hanya di satu server
+    const guild = client.guilds.cache.first();
     if (!guild) return;
     const channel = guild.channels.cache.get(VOICE_CHANNEL_ID);
     if (!channel || channel.type !== 2) {
@@ -33,7 +34,6 @@ async function joinVoiceChannelAndReconnect() {
         return;
     }
 
-    // Cek koneksi yang sudah ada
     const existingConnection = getVoiceConnection(guild.id);
     if (existingConnection && existingConnection.state.status === VoiceConnectionStatus.Ready) {
         return;
@@ -63,13 +63,11 @@ async function joinVoiceChannelAndReconnect() {
     currentConnection = connection;
 }
 
-// Saat bot siap
 client.once(Events.ClientReady, async (c) => {
     console.log(`✅ Bot ${c.user.tag} online!`);
     await joinVoiceChannelAndReconnect();
 });
 
-// Jika guild tersedia (misal setelah hosting down)
 client.on(Events.GuildAvailable, async (guild) => {
     const connection = getVoiceConnection(guild.id);
     if (!connection || connection.state.status !== VoiceConnectionStatus.Ready) {
@@ -77,7 +75,6 @@ client.on(Events.GuildAvailable, async (guild) => {
     }
 });
 
-// Handler pesan
 client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot) return;
 
@@ -95,7 +92,7 @@ client.on(Events.MessageCreate, async (message) => {
                 .setColor(0x2B2D31)
                 .setTitle(`${EMOJI_QRIS} QRIS ALL PAYMENT MARVINX TEAM ${EMOJI_PETIR}`)
                 .setImage('attachment://qris.jpg')
-                .setFooter({ text: 'Selesaikan pembayaran via QRIS, kemudian kirim bukti ke ticket.' });
+                .setFooter({ text: 'Scan QRIS di atas untuk melakukan pembayaran dan kirim bukti pembayaran ke admin' });
 
             await message.channel.send({
                 embeds: [embed],
@@ -105,7 +102,7 @@ client.on(Events.MessageCreate, async (message) => {
             console.error('Gagal kirim QRIS embed:', error);
         }
     }
-    // Command !pay (perhatikan: dari kode Anda command-nya !pay, bukan !allpay)
+    // Command !pay (lama)
     else if (content === '!pay') {
         try {
             const embed = new EmbedBuilder()
@@ -116,6 +113,24 @@ client.on(Events.MessageCreate, async (message) => {
             await message.channel.send({ embeds: [embed] });
         } catch (error) {
             console.error('Gagal kirim DANA embed:', error);
+        }
+    }
+    // Command !allpay (dengan gambar QRIS)
+    else if (content === '!allpay') {
+        try {
+            const imagePath = path.join(__dirname, 'assets', 'qris.jpg');
+            const embed = new EmbedBuilder()
+                .setColor(0x2B2D31)
+                .setTitle(`${EMOJI_QRIS} QRIS ALLPAY ${EMOJI_CENTANG}\n${EMOJI_DANA} DANA ${EMOJI_CENTANG}`)
+                .setImage('attachment://qris.jpg')
+                .setFooter({ text: 'Pilih metode pembayaran yang tersedia' });
+
+            await message.channel.send({
+                embeds: [embed],
+                files: [imagePath]
+            });
+        } catch (error) {
+            console.error('Gagal kirim ALLPAY embed:', error);
         }
     }
 });
