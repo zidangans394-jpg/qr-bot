@@ -16,28 +16,36 @@ const client = new Client({
 const ALLOWED_ROLE_ID = '1457302910672048244';
 const VOICE_CHANNEL_ID = '1470746311979434082';
 
-// Emoji custom
-const EMOJI_PETIR = '<a:thunder:1485326834269688019>';
-const EMOJI_QRIS = '<:qris:1485329765559832596>';
-const EMOJI_DANA = '<:dana:1485329627986657472>';
-const EMOJI_CENTANG = '<:10218verify:1485331070072389744>';
+// Nama dan ID emoji sesuai yang ada di server Anda
+const EMOJI_CONFIG = {
+    petir: { id: '1485326834269688019', name: 'thunder', animated: true },
+    qris:  { id: '1485329765559832596', name: 'qris', animated: false },
+    dana:  { id: '1485329627986657472', name: 'dana', animated: false },
+    centang: { id: '1485331070072389744', name: '10218verify', animated: false }
+};
+
+// Fungsi untuk mendapatkan string emoji custom atau fallback
+function getEmojiString(guild, type, fallback) {
+    const cfg = EMOJI_CONFIG[type];
+    if (!cfg) return fallback;
+    const emoji = guild?.emojis.cache.get(cfg.id);
+    if (emoji) return emoji.toString();
+    // Fallback ke Unicode jika emoji tidak ditemukan
+    return fallback;
+}
 
 let currentConnection = null;
 
-// Fungsi untuk join voice channel & auto-reconnect
 async function joinVoiceChannelAndReconnect() {
     const guild = client.guilds.cache.first();
     if (!guild) return;
     const channel = guild.channels.cache.get(VOICE_CHANNEL_ID);
     if (!channel || channel.type !== 2) {
-        console.error(`Voice channel ${VOICE_CHANNEL_ID} tidak ditemukan atau bukan voice channel`);
+        console.error(`Voice channel ${VOICE_CHANNEL_ID} tidak ditemukan`);
         return;
     }
-
     const existingConnection = getVoiceConnection(guild.id);
-    if (existingConnection && existingConnection.state.status === VoiceConnectionStatus.Ready) {
-        return;
-    }
+    if (existingConnection && existingConnection.state.status === VoiceConnectionStatus.Ready) return;
 
     const connection = joinVoiceChannel({
         channelId: VOICE_CHANNEL_ID,
@@ -46,20 +54,12 @@ async function joinVoiceChannelAndReconnect() {
     });
 
     connection.on(VoiceConnectionStatus.Ready, () => {
-        console.log(`✅ Bot berhasil masuk ke voice channel: ${channel.name}`);
+        console.log(`✅ Bot masuk voice: ${channel.name}`);
     });
-
     connection.on(VoiceConnectionStatus.Disconnected, async () => {
-        console.log('⚠️ Bot terputus dari voice channel, mencoba reconnect dalam 5 detik...');
-        setTimeout(() => {
-            joinVoiceChannelAndReconnect();
-        }, 5000);
+        console.log('⚠️ Terputus, reconnect dalam 5 detik...');
+        setTimeout(() => joinVoiceChannelAndReconnect(), 5000);
     });
-
-    connection.on('error', (error) => {
-        console.error('Voice connection error:', error);
-    });
-
     currentConnection = connection;
 }
 
@@ -69,69 +69,57 @@ client.once(Events.ClientReady, async (c) => {
 });
 
 client.on(Events.GuildAvailable, async (guild) => {
-    const connection = getVoiceConnection(guild.id);
-    if (!connection || connection.state.status !== VoiceConnectionStatus.Ready) {
-        await joinVoiceChannelAndReconnect();
-    }
+    if (!getVoiceConnection(guild.id)) await joinVoiceChannelAndReconnect();
 });
 
 client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot) return;
-
     const content = message.content.toLowerCase();
     const member = message.member;
+    if (!member || !member.roles.cache.has(ALLOWED_ROLE_ID)) return;
 
-    const hasAllowedRole = member && member.roles.cache.has(ALLOWED_ROLE_ID);
-    if (!hasAllowedRole) return;
+    const guild = message.guild;
+    const getEmoji = (type, fallback) => getEmojiString(guild, type, fallback);
 
     // Command !qr
     if (content === '!qr') {
         try {
             const imagePath = path.join(__dirname, 'assets', 'qris.jpg');
+            const petir = getEmoji('petir', '⚡');
+            const qris = getEmoji('qris', '🟢');
             const embed = new EmbedBuilder()
                 .setColor(0x2B2D31)
-                .setTitle(`${EMOJI_QRIS} QRIS ALL PAYMENT MARVINX TEAM ${EMOJI_PETIR}`)
+                .setTitle(`${qris} QRIS ALL PAYMENT MARVINX TEAM ${petir}`)
                 .setImage('attachment://qris.jpg')
-                .setFooter({ text: 'Scan QRIS di atas untuk melakukan pembayaran dan kirim bukti pembayaran ke admin' });
-
-            await message.channel.send({
-                embeds: [embed],
-                files: [imagePath]
-            });
-        } catch (error) {
-            console.error('Gagal kirim QRIS embed:', error);
-        }
+                .setFooter({ text: 'Scan QRIS di atas untuk pembayaran' });
+            await message.channel.send({ embeds: [embed], files: [imagePath] });
+        } catch (error) { console.error(error); }
     }
-    // Command !pay (lama)
+    // Command !pay (DANA saja)
     else if (content === '!pay') {
         try {
+            const dana = getEmoji('dana', '💰');
             const embed = new EmbedBuilder()
                 .setColor(0x2B2D31)
-                .setTitle(`${EMOJI_DANA} 085752852674 (DANA)`)
-                .setFooter({ text: 'Hanya untuk pembayaran via DANA selain QRIS' });
-
+                .setTitle(`${dana} 085752852674 (DANA)`)
+                .setFooter({ text: 'Pembayaran via DANA' });
             await message.channel.send({ embeds: [embed] });
-        } catch (error) {
-            console.error('Gagal kirim DANA embed:', error);
-        }
+        } catch (error) { console.error(error); }
     }
-    // Command !allpay (dengan gambar QRIS)
+    // Command !allpay (QRIS Allpay + DANA + centang)
     else if (content === '!allpay') {
         try {
             const imagePath = path.join(__dirname, 'assets', 'qris.jpg');
+            const qris = getEmoji('qris', '🟢');
+            const dana = getEmoji('dana', '💰');
+            const centang = getEmoji('centang', '✅');
             const embed = new EmbedBuilder()
                 .setColor(0x2B2D31)
-                .setTitle(`${EMOJI_QRIS} QRIS ALLPAY ${EMOJI_CENTANG}\n${EMOJI_DANA} DANA ${EMOJI_CENTANG}`)
+                .setTitle(`${qris} QRIS ALLPAY ${centang}\n${dana} DANA ${centang}`)
                 .setImage('attachment://qris.jpg')
-                .setFooter({ text: 'Pilih metode pembayaran yang tersedia' });
-
-            await message.channel.send({
-                embeds: [embed],
-                files: [imagePath]
-            });
-        } catch (error) {
-            console.error('Gagal kirim ALLPAY embed:', error);
-        }
+                .setFooter({ text: 'Pilih metode pembayaran' });
+            await message.channel.send({ embeds: [embed], files: [imagePath] });
+        } catch (error) { console.error(error); }
     }
 });
 
