@@ -30,8 +30,21 @@ function getEmojiString(guild, type, fallback) {
     if (!cfg) return fallback;
     const emoji = guild?.emojis.cache.get(cfg.id);
     if (emoji) return emoji.toString();
-    // Fallback ke Unicode jika emoji tidak ditemukan
     return fallback;
+}
+
+// Fungsi untuk mendapatkan timestamp format: • bulan/tanggal/tahun jam:menit AM/PM
+function getFormattedTimestamp() {
+    const now = new Date();
+    const month = now.getMonth() + 1; // Januari = 0
+    const day = now.getDate();
+    const year = now.getFullYear();
+    let hours = now.getHours();
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // jam 12 bukan 0
+    return `• ${month}/${day}/${year} ${hours}:${minutes} ${ampm}`;
 }
 
 let currentConnection = null;
@@ -80,6 +93,7 @@ client.on(Events.MessageCreate, async (message) => {
 
     const guild = message.guild;
     const getEmoji = (type, fallback) => getEmojiString(guild, type, fallback);
+    const timestamp = getFormattedTimestamp();
 
     // Command !qr
     if (content === '!qr') {
@@ -91,7 +105,7 @@ client.on(Events.MessageCreate, async (message) => {
                 .setColor(0x2B2D31)
                 .setTitle(`${qris} QRIS ALL PAYMENT MARVINX TEAM ${petir}`)
                 .setImage('attachment://qris.jpg')
-                .setFooter({ text: 'Scan QRIS di atas untuk pembayaran' });
+                .setFooter({ text: `Scan QRIS di atas untuk pembayaran ${timestamp}` });
             await message.channel.send({ embeds: [embed], files: [imagePath] });
         } catch (error) { console.error(error); }
     }
@@ -102,7 +116,7 @@ client.on(Events.MessageCreate, async (message) => {
             const embed = new EmbedBuilder()
                 .setColor(0x2B2D31)
                 .setTitle(`${dana} 085752852674 (DANA)`)
-                .setFooter({ text: 'Pembayaran via DANA' });
+                .setFooter({ text: `Pembayaran via DANA ${timestamp}` });
             await message.channel.send({ embeds: [embed] });
         } catch (error) { console.error(error); }
     }
@@ -117,7 +131,7 @@ client.on(Events.MessageCreate, async (message) => {
                 .setColor(0x2B2D31)
                 .setTitle(`${qris} QRIS ALLPAY ${centang}\n${dana} DANA ${centang}`)
                 .setImage('attachment://qris.jpg')
-                .setFooter({ text: 'MarvinX Team System' });
+                .setFooter({ text: `MarvinX Team System ${timestamp}` });
             await message.channel.send({ embeds: [embed], files: [imagePath] });
         } catch (error) { console.error(error); }
     }
