@@ -16,7 +16,6 @@ const client = new Client({
 const ALLOWED_ROLE_ID = '1457302910672048244';
 const VOICE_CHANNEL_ID = '1470746311979434082';
 
-// Nama dan ID emoji sesuai yang ada di server Anda
 const EMOJI_CONFIG = {
     petir: { id: '1485326834269688019', name: 'thunder', animated: true },
     qris:  { id: '1485329765559832596', name: 'qris', animated: false },
@@ -24,7 +23,6 @@ const EMOJI_CONFIG = {
     centang: { id: '1485331070072389744', name: '10218verify', animated: false }
 };
 
-// Fungsi untuk mendapatkan string emoji custom atau fallback
 function getEmojiString(guild, type, fallback) {
     const cfg = EMOJI_CONFIG[type];
     if (!cfg) return fallback;
@@ -33,17 +31,19 @@ function getEmojiString(guild, type, fallback) {
     return fallback;
 }
 
-// Fungsi untuk mendapatkan timestamp format: • bulan/tanggal/tahun jam:menit AM/PM
+// Fungsi timestamp dengan timezone WIB (UTC+7)
 function getFormattedTimestamp() {
     const now = new Date();
-    const month = now.getMonth() + 1; // Januari = 0
-    const day = now.getDate();
-    const year = now.getFullYear();
-    let hours = now.getHours();
-    const minutes = now.getMinutes().toString().padStart(2, '0');
+    // Convert ke WIB: UTC+7
+    const wibTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    const month = wibTime.getUTCMonth() + 1;
+    const day = wibTime.getUTCDate();
+    const year = wibTime.getUTCFullYear();
+    let hours = wibTime.getUTCHours();
+    const minutes = wibTime.getUTCMinutes().toString().padStart(2, '0');
     const ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12;
-    hours = hours ? hours : 12; // jam 12 bukan 0
+    hours = hours ? hours : 12;
     return `• ${month}/${day}/${year} ${hours}:${minutes} ${ampm}`;
 }
 
@@ -95,7 +95,6 @@ client.on(Events.MessageCreate, async (message) => {
     const getEmoji = (type, fallback) => getEmojiString(guild, type, fallback);
     const timestamp = getFormattedTimestamp();
 
-    // Command !qr
     if (content === '!qr') {
         try {
             const imagePath = path.join(__dirname, 'assets', 'qris.jpg');
@@ -109,7 +108,6 @@ client.on(Events.MessageCreate, async (message) => {
             await message.channel.send({ embeds: [embed], files: [imagePath] });
         } catch (error) { console.error(error); }
     }
-    // Command !pay (DANA saja)
     else if (content === '!pay') {
         try {
             const dana = getEmoji('dana', '💰');
@@ -120,7 +118,6 @@ client.on(Events.MessageCreate, async (message) => {
             await message.channel.send({ embeds: [embed] });
         } catch (error) { console.error(error); }
     }
-    // Command !allpay (QRIS Allpay + DANA + centang)
     else if (content === '!allpay') {
         try {
             const imagePath = path.join(__dirname, 'assets', 'qris.jpg');
