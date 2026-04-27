@@ -96,18 +96,15 @@ client.on(Events.MessageCreate, async (message) => {
     const timestamp = getFormattedTimestamp();
 
     if (content === '!qr') {
-        try {
-            const imagePath = path.join(__dirname, 'assets', 'qris.jpg');
-            const petir = getEmoji('petir', '⚡');
-            const qris = getEmoji('qris', '🟢');
-            const embed = new EmbedBuilder()
-                .setColor(0x2B2D31)
-                .setTitle(`${qris} QRIS ALL PAYMENT MARVINX TEAM ${petir}`)
-                .setImage('attachment://qris.jpg')
-                .setFooter({ text: `Scan QRIS di atas untuk pembayaran ${timestamp}` });
-            await message.channel.send({ embeds: [embed], files: [imagePath] });
-        } catch (error) { console.error(error); }
-    }
+    try {
+        const imagePath = path.join(__dirname, 'assets', 'qris.jpg');
+        const embed = new EmbedBuilder()
+            .setColor(0x2B2D31)
+            .setImage('attachment://qris.jpg')
+            .setFooter({ text: `Scan QRIS di atas untuk pembayaran ${timestamp}` });
+        await message.channel.send({ embeds: [embed], files: [imagePath] });
+    } catch (error) { console.error(error); }
+}
     else if (content === '!pay') {
         try {
             const dana = getEmoji('dana', '💰');
